@@ -4,7 +4,7 @@
 # TEST_MODE - If set, build a candidate image and test it
 
 # Array of all versions of MySQL
-declare -a VERSIONS=(5.5)
+declare -a VERSIONS=(5.5 5.6)
 
 OS=$1
 VERSION=$2
