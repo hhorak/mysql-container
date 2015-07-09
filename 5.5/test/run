@@ -140,6 +140,7 @@ function run_replication_test() {
       echo "The ${slave_ip} failed to register in MASTER"
       return 1
     fi
+    docker logs $(get_cid slave.cid)
     sleep 1
   done
 }

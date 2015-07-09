@@ -27,8 +27,7 @@ initialize_database
 wait_for_mysql_master
 
 mysql $mysql_flags <<EOSQL
-  CHANGE MASTER TO MASTER_HOST='$(mysql_master_addr)',MASTER_USER='${MYSQL_MASTER_USER}', MASTER_PASSWORD='${MYSQL_MASTER_PASSWORD}', MASTER_LOG_FILE='mysql-bin.000002', MASTER_LOG_POS=120;
-  SET GLOBAL SQL_SLAVE_SKIP_COUNTER = 1; START SLAVE;
+  CHANGE MASTER TO MASTER_HOST='$(mysql_master_addr)',MASTER_USER='${MYSQL_MASTER_USER}', MASTER_PASSWORD='${MYSQL_MASTER_PASSWORD}';
 EOSQL
 
 # Restart the MySQL server with public IP bindings
