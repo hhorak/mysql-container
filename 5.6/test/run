@@ -43,7 +43,7 @@ function get_container_ip() {
 }
 
 function mysql_cmd() {
-  docker run --rm $IMAGE_NAME mysql --host $CONTAINER_IP -u$USER -p"$PASS" "$@" db
+  docker run --rm $IMAGE_NAME mysql --host $CONTAINER_IP -u$USER -p"$PASS" "$@"
 }
 
 function test_connection() {
@@ -182,7 +182,6 @@ function assert_container_creation_fails() {
 }
 
 function try_image_invalid_combinations() {
-  assert_container_creation_fails "$@"
   assert_container_creation_fails -e MYSQL_USER=user -e MYSQL_PASSWORD=pass "$@"
   assert_container_creation_fails -e MYSQL_USER=user -e MYSQL_DATABASE=db "$@"
   assert_container_creation_fails -e MYSQL_PASSWORD=pass -e MYSQL_DATABASE=db "$@"
@@ -192,6 +191,13 @@ function run_container_creation_tests() {
   echo "  Testing image entrypoint usage"
   try_image_invalid_combinations
   try_image_invalid_combinations  -e MYSQL_ROOT_PASSWORD=root_pass
+  assert_container_creation_fails
+
+  # testing creation without user/pass/db
+  local ROOT_PASS=r00t
+  create_container root_alone -e MYSQL_ROOT_PASSWORD=$ROOT_PASS
+  CONTAINER_IP=$(get_container_ip root_alone)
+  USER=root PASS=$ROOT_PASS test_connection root_alone
 
   VERY_LONG_DB_NAME="very_long_database_name_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
   assert_container_creation_fails -e MYSQL_USER=\$invalid -e MYSQL_PASSWORD=pass -e MYSQL_DATABASE=db -e MYSQL_ROOT_PASSWORD=root_pass

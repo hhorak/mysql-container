@@ -30,9 +30,11 @@ fi
 
 # Set the password for MySQL user and root everytime this container is started.
 # This allows to change the password by editing the deployment configuration.
+if [ -v MYSQL_PASSWORD ] ; then
 mysql $mysql_flags <<EOSQL
   SET PASSWORD FOR '${MYSQL_USER}'@'%' = PASSWORD('${MYSQL_PASSWORD}');
 EOSQL
+fi
 
 # The MYSQL_ROOT_PASSWORD is optional
 if [ -v MYSQL_ROOT_PASSWORD ]; then

@@ -20,13 +20,13 @@ mysql_password_regex='^[a-zA-Z0-9_~!@#$%^&*()-=<>,.?;:|]+$'
 
 function usage() {
   [ $# == 2 ] && echo "error: $1"
-  echo "You must specify following environment variables:"
+  echo "You must specify either following environment variables to create ordinary user:"
   echo "  MYSQL_USER (regex: '$mysql_identifier_regex')"
   echo "  MYSQL_PASSWORD (regex: '$mysql_password_regex')"
   echo "  MYSQL_DATABASE (regex: '$mysql_identifier_regex')"
-  echo "Optional:"
+  echo "Or following environment variable to set root password:"
   echo "  MYSQL_ROOT_PASSWORD (regex: '$mysql_password_regex')"
-  echo "Settings:"
+  echo "Settings (all optional):"
   echo "  MYSQL_LOWER_CASE_TABLE_NAMES (default: 0)"
   echo "  MYSQL_MAX_CONNECTIONS (default: 151)"
   echo "  MYSQL_FT_MIN_WORD_LEN (default: 4)"
@@ -36,15 +36,21 @@ function usage() {
 }
 
 function validate_variables() {
-  if ! [[ -v MYSQL_USER && -v MYSQL_PASSWORD && -v MYSQL_DATABASE ]]; then
+  # either MYSQL_USER, MYSQL_PASSWORD & MYSQL_DATABASE must be set
+  # or MYSQL_ROOT_PASSWORD
+  if ! [[ -v MYSQL_USER && -v MYSQL_PASSWORD && -v MYSQL_DATABASE ]] \
+     && [[ ! -v MYSQL_ROOT_PASSWORD || -v MYSQL_USER || -v MYSQL_PASSWORD || -v MYSQL_DATABASE ]] ; then
     usage
   fi
 
-  [[ "$MYSQL_USER"     =~ $mysql_identifier_regex ]] || usage "Invalid MySQL username"
-  [ ${#MYSQL_USER} -le 16 ] || usage "MySQL username too long (maximum 16 characters)"
-  [[ "$MYSQL_PASSWORD" =~ $mysql_password_regex   ]] || usage "Invalid password"
-  [[ "$MYSQL_DATABASE" =~ $mysql_identifier_regex ]] || usage "Invalid database name"
-  [ ${#MYSQL_DATABASE} -le 64 ] || usage "Database name too long (maximum 64 characters)"
+  if [[ -v MYSQL_USER && -v MYSQL_PASSWORD && -v MYSQL_DATABASE ]] ; then
+    [[ "$MYSQL_USER"     =~ $mysql_identifier_regex ]] || usage "Invalid MySQL username"
+    [ ${#MYSQL_USER} -le 16 ] || usage "MySQL username too long (maximum 16 characters)"
+    [[ "$MYSQL_PASSWORD" =~ $mysql_password_regex   ]] || usage "Invalid password"
+    [[ "$MYSQL_DATABASE" =~ $mysql_identifier_regex ]] || usage "Invalid database name"
+    [ ${#MYSQL_DATABASE} -le 64 ] || usage "Database name too long (maximum 64 characters)"
+  fi
+
   if [ -v MYSQL_ROOT_PASSWORD ]; then
     [[ "$MYSQL_ROOT_PASSWORD" =~ $mysql_password_regex ]] || usage "Invalid root password"
   fi
@@ -89,13 +95,15 @@ function initialize_database() {
 
   [ -v MYSQL_DISABLE_CREATE_DB ] && return
 
-  mysqladmin $admin_flags create "${MYSQL_DATABASE}"
+  if [[ -v MYSQL_USER && -v MYSQL_PASSWORD && -v MYSQL_DATABASE ]] ; then
+    mysqladmin $admin_flags create "${MYSQL_DATABASE}"
 
 mysql $mysql_flags <<EOSQL
     CREATE USER '${MYSQL_USER}'@'%' IDENTIFIED BY '${MYSQL_PASSWORD}';
     GRANT ALL ON \`${MYSQL_DATABASE}\`.* TO '${MYSQL_USER}'@'%' ;
     FLUSH PRIVILEGES ;
 EOSQL
+  fi
 
   if [ -v MYSQL_ROOT_PASSWORD ]; then
 mysql $mysql_flags <<EOSQL
