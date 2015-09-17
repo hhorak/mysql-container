@@ -46,6 +46,7 @@ RUN rpmkeys --import file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7 && \
 
 COPY run-*.sh /usr/local/bin/
 COPY contrib /var/lib/mysql/
+COPY atomic-contrib /usr/share/container-layer/mysql/atomic
 
 # Loosen permission bits to avoid problems running container with arbitrary UID
 RUN chmod -R a+rwx /var/lib/mysql
